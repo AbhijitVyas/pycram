@@ -8,7 +8,7 @@ from ..costmaps import OccupancyCostmap, VisibilityCostmap, SemanticCostmap, Gau
 from pycram.robot_descriptions.robot_description_handler import InitializedRobotDescription as robot_description
 from ..helper import transform
 from ..pose_generator_and_validator import pose_generator, visibility_validator, reachability_validator
-
+import time
 
 class LocationDesignatorDescription(DesignatorDescription):
     """
@@ -128,6 +128,10 @@ class CostmapLocation(LocationDesignatorDescription):
         """
         List of arms with which the pose can be reached, is only used when the 'rechable_for' parameter is used
         """
+        torso_height: float
+        """
+        Height of the torso joint that is needed for reachability
+        """
 
     def __init__(self, target, reachable_for=None, visible_for=None, reachable_arm=None, resolver=None):
         """
@@ -177,39 +181,51 @@ class CostmapLocation(LocationDesignatorDescription):
 
         ground_pose = [[target_pose[0][0], target_pose[0][1], 0], target_pose[1]]
 
-        occupancy = OccupancyCostmap(0.4, False, 200, 0.02, [ground_pose[0], [0, 0, 0, 1]],
-                                     BulletWorld.current_bullet_world)
-        final_map = occupancy
+        # Variable for quick fix
+        found_pose = False
+        i = 0
+        torso_height = BulletWorld.robot.get_joint_limits(robot_description.i.torso_joint)[1]
+        while not found_pose or i < 5:
+            occupancy = OccupancyCostmap(0.4, False, 200, 0.02, [ground_pose[0], [0, 0, 0, 1]],
+                                         BulletWorld.current_bullet_world)
+            final_map = occupancy
+            # final_map.visualize()
+            # time.sleep(5)
+            # final_map.close_visualization()
 
-        if self.reachable_for:
-            gaussian = GaussianCostmap(200, 15, 0.02, [ground_pose[0], [0, 0, 0, 1]])
-            final_map += gaussian
-        if self.visible_for:
-            visible = VisibilityCostmap(min_height, max_height, 200, 0.02, [target_pose[0], [0, 0, 0, 1]])
-            final_map += visible
+            if self.reachable_for:
+                gaussian = GaussianCostmap(200, 15, 0.02, [ground_pose[0], [0, 0, 0, 1]])
+                final_map += gaussian
+            if self.visible_for:
+                visible = VisibilityCostmap(min_height, max_height, 200, 0.02, [target_pose[0], [0, 0, 0, 1]])
+                final_map += visible
 
-        if self.visible_for or self.reachable_for:
-            robot_object = self.visible_for.bullet_world_object if self.visible_for else self.reachable_for.bullet_world_object
-            test_robot = BulletWorld.current_bullet_world.get_shadow_object(robot_object)
+            if self.visible_for or self.reachable_for:
+                robot_object = self.visible_for.bullet_world_object if self.visible_for else self.reachable_for.bullet_world_object
+                test_robot = BulletWorld.current_bullet_world.get_shadow_object(robot_object)
 
-        with Use_shadow_world():
 
-            for maybe_pose in pose_generator(final_map):
-                res = True
-                arms = None
-                if self.visible_for:
-                    res = res and visibility_validator(maybe_pose, test_robot, target_pose,
-                                                       BulletWorld.current_bullet_world)
-                if self.reachable_for:
-                    valid, arms = reachability_validator(maybe_pose, test_robot, target_pose,
-                                                         BulletWorld.current_bullet_world)
-                    if self.reachable_arm:
-                        res = res and valid and self.reachable_arm in arms
-                    else:
-                        res = res and valid
 
-                if res:
-                    yield self.Location(list(maybe_pose), arms)
+            with Use_shadow_world():
+                test_robot.set_joint_state(robot_description.i.torso_joint, torso_height - i * 0.06)
+
+                for maybe_pose in pose_generator(final_map, number_of_samples=600):
+                    res = True
+                    arms = None
+                    if self.visible_for:
+                        res = res and visibility_validator(maybe_pose, test_robot, target_pose,
+                                                           BulletWorld.current_bullet_world)
+                    if self.reachable_for:
+                        valid, arms = reachability_validator(maybe_pose, test_robot, target_pose,
+                                                             BulletWorld.current_bullet_world)
+                        if self.reachable_arm:
+                            res = res and valid and self.reachable_arm in arms
+                        else:
+                            res = res and valid
+
+                    if res:
+                        yield self.Location(list(maybe_pose), arms, torso_height)
+            i += 1
 
 
 class SemanticCostmapLocation(LocationDesignatorDescription):
