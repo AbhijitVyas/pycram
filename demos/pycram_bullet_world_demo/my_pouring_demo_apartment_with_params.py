@@ -12,7 +12,7 @@ from pycram.process_module import simulated_robot, with_simulated_robot
 from pycram.language import macros, par
 from pycram.designators.location_designator import *
 from pycram.designators.action_designator import *
-from pycram.resolver.plans import Arms
+# from pycram.resolver.plans import Arms
 from pycram.enums import Arms
 
 
@@ -120,7 +120,7 @@ def pickup_plan(source_obj, source_obj_desig, grasp_arm=None, grasp_type=None):
     with simulated_robot:
         ParkArmsAction([Arms.BOTH]).resolve().perform()
         MoveTorsoAction([0.3]).resolve().perform()
-        pickup_pose = CostmapLocation(target=[[source_obj.pose[0],source_obj.pose[1],source_obj.pose[2]],[0,0,0,1]], reachable_for=robot_desig).resolve()
+        pickup_pose = CostmapLocation(target=[[source_obj.pose[0],source_obj.pose[1],source_obj.pose[2]],[0,0,0,1]], reachable_for=robot_desig, reachable_arm=grasp_arm).resolve()
         print("pickup pose: ", pickup_pose)
         pickup_arm = None
         if grasp_arm in pickup_pose.reachable_arms:
@@ -140,7 +140,7 @@ def pickup_plan(source_obj, source_obj_desig, grasp_arm=None, grasp_type=None):
         ParkArmsAction([Arms.BOTH]).resolve().perform()
 
 
-def putdown_plan(location, source_obj, source_obj_desig, pickup_arm):
+def putdown_plan(location, source_obj_desig, pickup_arm):
     print("putdown location", location)
 
     with simulated_robot:
