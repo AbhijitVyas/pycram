@@ -596,7 +596,6 @@ class NavigateAction(ActionDesignatorDescription):
             return ORMNavigateAction()
 
         def insert(self, session, *args, **kwargs) -> ORMNavigateAction:
-
             # initialize position and orientation
             position = Position(*self.target_location[0])
             orientation = Quaternion(*self.target_location[1])
