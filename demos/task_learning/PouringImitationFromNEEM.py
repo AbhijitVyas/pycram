@@ -71,59 +71,96 @@ def pouring_plan(source_obj, source_obj_desig, destination_obj, destination_obj_
     pouring_time_obj = NEEMData().get_pouring_event_time_duration()
     pouring_time = (pouring_time_obj.get('End') - pouring_time_obj.get('Begin'))
     print("pouring_time:", pouring_time)
-    
+
     # todo. get the pouring pose from the NEEM
-    
     with simulated_robot:
         print("source obj current pose ", source_obj.pose)
         print("destination obj location ", destination_obj.pose)
 
-
         ParkArmsAction([Arms.BOTH]).resolve().perform()
 
-        MoveTorsoAction([0.3]).resolve().perform()
-        pickup_pose = CostmapLocation(target=[[source_obj.pose[0],source_obj.pose[1],source_obj.pose[2]],[0,0,0,1]], reachable_for=robot_desig).resolve()
-        print("pickup pose: ", pickup_pose)
-        pickup_arm = None
-        if pouring_hand in pickup_pose.reachable_arms:
-            pickup_arm = pouring_hand
-        else:
-            print("Not possible to pickup with given arm: ", pouring_hand, ". Please try one more time")
-            return
+        MoveTorsoAction([0.31]).resolve().perform()
+        # pickup_pose = CostmapLocation(target=[[source_obj.pose[0],source_obj.pose[1],source_obj.pose[2]],[0,0,0,1]], reachable_for=robot_desig).resolve()
 
-        print('pickup_arm', pickup_arm)
+        pickup_pose = None
+        while True:
+            pickup_pose = calculate_robot_pose(source_obj.pose, [0,0,0,1], pouring_hand)
+            if(pickup_pose != None):
+                break
+        print("pickup pose: ", pickup_pose)
         print("Navigate to pickup pose")
         NavigateAction(target_locations=[pickup_pose.pose]).resolve().perform()
 
         ParkArmsAction([Arms.BOTH]).resolve().perform()
         print("Perform pickup action")
-        PickUpAction(object_designator_description=source_obj_desig, arms=[pickup_arm], grasps=["front"]).resolve().perform()
+        PickUpAction(object_designator_description=source_obj_desig, arms=[pouring_hand], grasps=["front"]).resolve().perform()
 
         ParkArmsAction([Arms.BOTH]).resolve().perform()
-
-        # navigate to destination obj first before doing pouring
-        # print("Navigate to destination obj")
-        # NavigateAction(target_locations=[[destination_obj.pose[0],destination_obj.pose[1],destination_obj.pose[2]],[0,0,0,1]]).resolve().perform()
-
-        # do pouring by tilting, and accept time interval and speed as well
         quaternion = tf.transformations.quaternion_from_euler(math.radians(pouring_angle), 0, 0, axes="sxyz")
         print('perform quaternion', quaternion)
+        pour_pose = None
+        while True:
+            pour_pose = calculate_pour_pose(destination_obj, pouring_hand, quaternion)
+            if(pour_pose != None):
+                break
+        print('pouring pose: ', pour_pose)
+        # go close to the destination container
+        print("Navigate to pour pose")
+        NavigateAction(target_locations=[pour_pose.pose]).resolve().perform()
+        
+        ParkArmsAction([Arms.BOTH]).resolve().perform()
+        
+        # calculate tilting pose
         tilting_pose = SemanticCostmapLocation.Location(pose=[[destination_obj.pose[0],destination_obj.pose[1],destination_obj.pose[2]+0.3], quaternion])
         print('tilting pose: ', tilting_pose)
-        revert_tilting_pose = SemanticCostmapLocation.Location(pose=[[destination_obj.pose[0],destination_obj.pose[1],destination_obj.pose[2]], [0.0, 0, 0, 1]])
+        revert_tilting_pose = SemanticCostmapLocation.Location(pose=[[destination_obj.pose[0],destination_obj.pose[1],destination_obj.pose[2]+0.3], [0.0, 0, 0, 1]])
         print('revert tilting pose: ', revert_tilting_pose)
         print('perform pouring action')
+        # do pouring by tilting, and accept time interval
         PourAction(source_obj_desig, pouring_location=[tilting_pose.pose], revert_location=[revert_tilting_pose.pose],
-                   arms=[pickup_arm], wait_duration= pouring_time).resolve().perform()
+                   arms=[pouring_hand], wait_duration= pouring_time).resolve().perform()
 
         ParkArmsAction([Arms.BOTH]).resolve().perform()
 
+        place_nav_pose = None
+        while True:
+            place_nav_pose = calculate_robot_pose(source_obj.original_pose[0], [0,0,0,1], pouring_hand)
+            if(place_nav_pose != None):
+                break
+        print('place_nav_pose: ', place_nav_pose)
+        # go close to the destination container
+        print("Navigate to place navigation pose")
+        NavigateAction(target_locations=[place_nav_pose.pose]).resolve().perform()
+
+        ParkArmsAction([Arms.BOTH]).resolve().perform()
+        
         place_pose = SemanticCostmapLocation.Location(pose=[source_obj.original_pose[0],[0,0,0,1]])
         print('place pose: ', place_pose)
         print('perform place action')
-        PlaceAction(source_obj_desig, target_locations=[place_pose.pose], arms=[pickup_arm]).resolve().perform()
+        PlaceAction(source_obj_desig, target_locations=[place_pose.pose], arms=[pouring_hand]).resolve().perform()
 
         go_back_to_original_position()
+
+
+def calculate_robot_pose(pose, orientation, pouring_hand):
+    robot_pose = CostmapLocation(target=[pose,
+                                         orientation], reachable_for=robot_desig).resolve()
+    # check if the calculated hand is the correct hand, otherwise return false
+    if pouring_hand in robot_pose.reachable_arms:
+        return robot_pose
+    else:
+        print("Not possible to perform action with given arm: ", pouring_hand, ". Please try one more time")
+        return None
+    
+def calculate_pour_pose(destination_obj, pouring_hand, quaternion):
+    pour_pose = CostmapLocation(target=[[destination_obj.pose[0],destination_obj.pose[1],destination_obj.pose[2]+0.3], 
+                                        quaternion], reachable_for=robot_desig).resolve()
+    # check if the calculated hand is the correct hand, otherwise return false
+    if pouring_hand in pour_pose.reachable_arms:
+        return pour_pose
+    else:
+        print("Not possible to pour with given arm: ", pouring_hand, ". Please try one more time")
+        return None
 
 
 def Park_Arms_Action():
@@ -147,7 +184,7 @@ def pickup_plan(source_obj, source_obj_desig, grasp_arm=None, grasp_type=None):
 
     with simulated_robot:
         ParkArmsAction([Arms.BOTH]).resolve().perform()
-        MoveTorsoAction([0.3]).resolve().perform()
+        MoveTorsoAction([0.31]).resolve().perform()
         pickup_pose = CostmapLocation(target=[[source_obj.pose[0],source_obj.pose[1],source_obj.pose[2]],[0,0,0,1]], reachable_for=robot_desig, reachable_arm=grasp_arm).resolve()
         print("pickup pose: ", pickup_pose)
         pickup_arm = None
@@ -173,7 +210,7 @@ def putdown_plan(location, source_obj_desig, pickup_arm):
 
     with simulated_robot:
         ParkArmsAction([Arms.BOTH]).resolve().perform()
-        MoveTorsoAction([0.3]).resolve().perform()
+        MoveTorsoAction([0.31]).resolve().perform()
 
         place_pose = CostmapLocation(target=[location, [0.0, 0, 0, 1.0]], reachable_for=robot_desig).resolve()
         # print('place pose: ', place_pose)
