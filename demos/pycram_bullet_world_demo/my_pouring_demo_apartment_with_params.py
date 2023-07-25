@@ -1,7 +1,8 @@
 import sys
 import os
-sys.path.append(os.getcwd() + "/../../src/")
-import macropy
+print(os.getcwd())
+sys.path.append(os.getcwd() + "/../../../src/")
+
 import pycram
 from pycram.bullet_world import BulletWorld, Object
 import pycram.bullet_world_reasoning as btr
@@ -48,15 +49,15 @@ ON_EDGE_OF_COUNTER_TOP = [2.5,1.25,0.95]
 # def reset_plan():
 #     ParkArmsAction([Arms.BOTH]).resolve().perform()
 #     NavigateAction(target_locations=[pr2.original_pose[0]]).resolve().perform()
-    
+
 # pouring plan begins
-def pouring_plan(source_obj, source_obj_desig, destination_obj, destination_obj_desig, pouring_angle):
-            
+def pouring_plan(source_obj, source_obj_desig, destination_obj, destination_obj_desig, pouring_angle, pouring_time):
+
     with simulated_robot:
         print("source obj current pose ", source_obj.pose)
         print("destination obj location ", destination_obj.pose)
-        
-        
+
+
         ParkArmsAction([Arms.BOTH]).resolve().perform()
 
         MoveTorsoAction([0.3]).resolve().perform()
@@ -66,7 +67,7 @@ def pouring_plan(source_obj, source_obj_desig, destination_obj, destination_obj_
         print('pickup_arm', pickup_arm)
         print("Navigate to pickup pose")
         NavigateAction(target_locations=[pickup_pose.pose]).resolve().perform()
-        
+
         ParkArmsAction([Arms.BOTH]).resolve().perform()
         print("Perform pickup action")
         PickUpAction(object_designator_description=source_obj_desig, arms=[pickup_arm], grasps=["front"]).resolve().perform()
@@ -86,7 +87,7 @@ def pouring_plan(source_obj, source_obj_desig, destination_obj, destination_obj_
         print('revert tilting pose: ', revert_tilting_pose)
         print('perform pouring action')
         PourAction(source_obj_desig, pouring_location=[tilting_pose.pose], revert_location=[revert_tilting_pose.pose],
-                   arms=[pickup_arm], wait_duration= 5).resolve().perform()
+                   arms=[pickup_arm], wait_duration= pouring_time).resolve().perform()
 
         ParkArmsAction([Arms.BOTH]).resolve().perform()
 
@@ -94,25 +95,25 @@ def pouring_plan(source_obj, source_obj_desig, destination_obj, destination_obj_
         print('place pose: ', place_pose)
         print('perform place action')
         PlaceAction(source_obj_desig, target_locations=[place_pose.pose], arms=[pickup_arm]).resolve().perform()
-        
+
         go_back_to_original_position()
 
 
 def Park_Arms_Action():
     with simulated_robot:
         ParkArmsAction([Arms.BOTH]).resolve().perform()
-    
+
 # only use this method internally not from ipython terminal
 def go_back_to_original_position():
     with simulated_robot:
         ParkArmsAction([Arms.BOTH]).resolve().perform()
-    
+
         final_pose = SemanticCostmapLocation.Location(pose=[[1, 2.5, 0], [0.0, 0, 0, 1.0]])
         print('final pose: ', final_pose)
         # end_pose = CostmapLocation(target=robot_desig.resolve(), reachable_for=robot_desig).resolve()
         NavigateAction(target_locations=[final_pose.pose]).resolve().perform()
-    
-    
+
+
 def pickup_plan(source_obj, source_obj_desig, grasp_arm=None, grasp_type=None):
     print("Given grasp type", grasp_type)
     print("Given grasp arm", grasp_arm)
@@ -125,9 +126,9 @@ def pickup_plan(source_obj, source_obj_desig, grasp_arm=None, grasp_type=None):
         pickup_arm = None
         if grasp_arm in pickup_pose.reachable_arms:
             pickup_arm = grasp_arm
-        else:    
+        else:
             print("Not possible to pickup with given arm: ", grasp_arm, ". Please try one more time")
-            return 
+            return
 
         print('pickup_arm', pickup_arm)
         print("Navigate to pickup pose")
@@ -146,7 +147,7 @@ def putdown_plan(location, source_obj_desig, pickup_arm):
     with simulated_robot:
         ParkArmsAction([Arms.BOTH]).resolve().perform()
         MoveTorsoAction([0.3]).resolve().perform()
-        
+
         place_pose = CostmapLocation(target=[location, [0.0, 0, 0, 1.0]], reachable_for=robot_desig).resolve()
         # print('place pose: ', place_pose)
         # 
@@ -159,18 +160,18 @@ def putdown_plan(location, source_obj_desig, pickup_arm):
         PlaceAction(source_obj_desig, target_locations=[place_pose.pose], arms=[pickup_arm]).resolve().perform()
 
         ParkArmsAction([Arms.BOTH]).resolve().perform()
-        
+
         # print('perform place action')
         # putting_down_pose = SemanticCostmapLocation.Location(pose=[location, [0.0, 0, 0, 1.0]])
         # PlaceAction(source_obj_desig, target_locations=[putting_down_pose.pose], arms=[pickup_arm]).resolve().perform()
         # 
         # ParkArmsAction([Arms.BOTH]).resolve().perform()
-        
+
 
 def move_plan(x, y, z, yaw):
     with simulated_robot:
         quaternion = tf.transformations.quaternion_from_euler(0, 0, yaw, axes="sxyz")
         print("moving pr2 to the pose: ", x, y, z)
         print("moving pr2 to the orientation: ", quaternion)
-        
+
         NavigateAction(target_locations=[[[x,y,z], quaternion]]).resolve().perform()
