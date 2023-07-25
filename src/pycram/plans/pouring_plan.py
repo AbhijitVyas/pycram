@@ -6,7 +6,7 @@ from src import macropy
 from src.pycram.bullet_world import BulletWorld, Object
 from src.pycram import bullet_world_reasoning as btr
 import tf
-from src.pycram.robot_descriptions.robot_description_handler import InitializedRobotDescription as robot_description
+from src.pycram.robot_descriptions import InitializedRobotDescription as robot_description
 from src.pycram.designators.motion_designator import MotionDesignatorDescription, MoveArmJointsMotion
 from src.pycram.process_module import simulated_robot, with_simulated_robot
 from src.pycram.language import macros, par

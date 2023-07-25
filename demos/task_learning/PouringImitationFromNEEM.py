@@ -9,7 +9,7 @@ from neem_interface_python.src.rest_neem_interface.neemdata import NEEMData
 from pycram.bullet_world import BulletWorld, Object
 import pycram.bullet_world_reasoning as btr
 import tf
-from pycram.robot_descriptions.robot_description_handler import InitializedRobotDescription as robot_description
+from pycram.robot_descriptions import InitializedRobotDescription as robot_description
 from pycram.designators.motion_designator import MotionDesignatorDescription, MoveArmJointsMotion
 from pycram.process_module import simulated_robot, with_simulated_robot
 from pycram.language import macros, par
@@ -49,22 +49,50 @@ breakfast_cereal_desig = ObjectDesignatorDescription(names=["breakfast_cereal"])
 SM_CokeBottle = Object("SM_CokeBottle", "SM_CokeBottle", "SM_CokeBottle.stl", position=[2.5, 3, 0.95])
 SM_CokeBottle_desig = ObjectDesignatorDescription(names=["SM_CokeBottle"])
 
+# spawn jeroen_cup
+jeroen_cup = Object("jeroen_cup", "jeroen_cup", "jeroen_cup.stl", position=[2.5, 3.1, 1.0])
+jeroen_cup_desig = ObjectDesignatorDescription(names=["jeroen_cup"])
+
 NEAR_STOVE = [2.5,2,0.95]
 ON_STOVE = [2.5,1.5,0.95]
 ON_EDGE_OF_COUNTER_TOP = [2.5,1.25,0.95]
 
 
-# def reset_plan():
-#     ParkArmsAction([Arms.BOTH]).resolve().perform()
-#     NavigateAction(target_locations=[pr2.original_pose[0]]).resolve().perform()
+# pouring plan from console
+def pouring_plan_from_instructions(source_obj, source_obj_desig, destination_obj, destination_obj_desig, pouring_angle, pouring_time, pouring_hand):
+    with simulated_robot:
+        print("source obj current pose ", source_obj.pose)
+        print("destination obj location ", destination_obj.pose)
+        ParkArmsAction([Arms.BOTH]).resolve().perform()
+        MoveTorsoAction([0.31]).resolve().perform()
 
-# pouring plan begins
-def pouring_plan(source_obj, source_obj_desig, destination_obj, destination_obj_desig, pouring_angle, pouring_time, pouring_hand):
+        # perform picking up action
+        while True:
+            is_successful = do_pick_up(source_obj, source_obj_desig, pouring_hand)
+            if(is_successful):
+                break
 
-    # get data from recorded neem
-    pouring_angle, pouring_time = get_data_from_neem()
+        # perform pouring action
+        while True:
+            is_successful = do_pour(source_obj_desig, destination_obj, pouring_hand, pouring_angle, pouring_time)
+            if(is_successful):
+                break
 
-    # TODO: get the pouring pose from the NEEM
+        # perform placing action
+        while True:
+            is_successful = do_place(source_obj, source_obj_desig, pouring_hand)
+            if(is_successful):
+                break
+
+        go_back_to_original_position()
+
+
+# pouring plan from NEEM
+def pouring_plan_from_neems(pouring_hand):
+
+    # get the pouring parameters from the NEEM
+    pouring_angle, pouring_time, source_obj, source_obj_desig, destination_obj, destination_obj_desig = get_data_from_neem()
+
     with simulated_robot:
         print("source obj current pose ", source_obj.pose)
         print("destination obj location ", destination_obj.pose)
@@ -93,9 +121,45 @@ def pouring_plan(source_obj, source_obj_desig, destination_obj, destination_obj_
 
 def get_data_from_neem():
     # get source container
-    # NEEMData().get_source_container_while_grasping()
+    source_obj, source_obj_desig = None, None
+    destination_obj, destination_obj_desig = None, None
+    source = NEEMData().get_source_container_while_grasping().get("Obj")
+    print("source container from NEEM ", source)
+    if('jeroen_cup' in source):
+        source_obj = jeroen_cup
+        source_obj_desig = jeroen_cup_desig
+    elif('bowl' in source):
+        source_obj = bowl
+        source_obj_desig = bowl_desig
+    elif('SM_CokeBottle' in source):
+        source_obj = SM_CokeBottle
+        source_obj_desig = SM_CokeBottle_desig
+    elif('breakfast_cereal' in source):
+        source_obj = breakfast_cereal
+        source_obj_desig = breakfast_cereal_desig
+    elif('milk' in source):
+        source_obj = milk
+        source_obj_desig = milk_desig
+
     # get destination container
-    # print(NEEMData().get_source_container_while_grasping())
+    destination = NEEMData().get_target_obj_for_pouring().get("Obj")
+    print("destination container from NEEM: ", destination)
+    if('jeroen_cup' in destination):
+        destination_obj = jeroen_cup
+        destination_obj_desig = jeroen_cup_desig
+    elif('bowl' or 'Bowl' in destination):
+        destination_obj = bowl
+        destination_obj_desig = bowl_desig
+    elif('SM_CokeBottle' in destination):
+        destination_obj = SM_CokeBottle
+        destination_obj_desig = SM_CokeBottle_desig
+    elif('breakfast_cereal' in destination):
+        destination_obj = breakfast_cereal
+        destination_obj_desig = breakfast_cereal_desig
+    elif('milk' in destination):
+        destination_obj = milk
+        destination_obj_desig = milk_desig
+
     # get pouring angle
     pouring_angle_obj = NEEMData().get_max_pouring_angle_for_source_obj()
     pouring_angle = pouring_angle_obj.get('AngleValue')
@@ -105,7 +169,7 @@ def get_data_from_neem():
     pouring_time_obj = NEEMData().get_pouring_event_time_duration()
     pouring_time = (pouring_time_obj.get('End') - pouring_time_obj.get('Begin'))
     print("pouring_time:", pouring_time)
-    return pouring_angle, pouring_time
+    return pouring_angle, pouring_time, source_obj, source_obj_desig, destination_obj, destination_obj_desig
 def do_place(source_obj, source_obj_desig, pouring_hand):
     with simulated_robot:
         place_nav_pose = None

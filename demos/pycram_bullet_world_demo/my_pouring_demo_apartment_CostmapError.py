@@ -2,7 +2,7 @@ import pycram
 from pycram.bullet_world import BulletWorld, Object
 import pycram.bullet_world_reasoning as btr
 import tf
-from pycram.robot_descriptions.robot_description_handler import InitializedRobotDescription as robot_description
+from pycram.robot_descriptions import InitializedRobotDescription as robot_description
 from pycram.designators.motion_designator import MotionDesignatorDescription, MoveArmJointsMotion
 from pycram.process_module import simulated_robot, with_simulated_robot
 from pycram.language import macros, par
