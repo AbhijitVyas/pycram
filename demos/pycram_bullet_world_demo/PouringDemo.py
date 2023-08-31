@@ -14,16 +14,16 @@ world = BulletWorld()
 world.set_gravity([0, 0, -9.8])
 
 # source container
-milk = Object("milk", "milk", "milk.stl", pose=Pose([2.4, 2.5, 1]))
+milk = Object("milk", "milk", "../../resources/milk.stl", pose=Pose([2.4, 2.5, 1]))
 # destination container
-bowl = Object("bowl", "bowl", "bowl.stl", pose=Pose([2.4, 2.8, 0.98]))
-pr2 = Object("pr2", "robot", "pr2.urdf", pose=Pose([1.2, 2.5, 0]))
+bowl = Object("bowl", "bowl", "../../resources/bowl.stl", pose=Pose([2.4, 2.8, 0.98]))
+pr2 = Object("pr2", "robot", "../../resources/pr2.urdf", pose=Pose([1.2, 2.5, 0]))
 
 pr2_desig = BelieveObject(names=["pr2"])
 milk_desig = BelieveObject(names=["milk"])
 bowl_desig = BelieveObject(names=["bowl"])
 
-apartment = Object("apartment", "environment", "apartment.urdf")
+apartment = Object("apartment", "environment", "../../resources/apartment.urdf")
 
 with simulated_robot:
     ParkArmsAction([Arms.BOTH]).resolve().perform()
