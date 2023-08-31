@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pybullet = "~=3.1.7"
+rospkg = "~=1.4.0"
+roslibpy = "~=1.2.1"
+pathlib = "~=1.0.1"
+numpy = "~=1.19.5"
+pytransform3d = "~=1.9.1"
+urdf-parser-py = "~=0.0.3"
+graphviz = "*"
+anytree = ">=2.8.0"
+sqlalchemy = ">=2.0.9"
+jupyter = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"
+python_full_version = "3.8.10"

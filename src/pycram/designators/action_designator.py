@@ -13,11 +13,13 @@ from ..orm.action_designator import (ParkArmsAction as ORMParkArmsAction, Naviga
                                      MoveTorsoAction as ORMMoveTorsoAction, SetGripperAction as ORMSetGripperAction,
                                      Action as ORMAction)
 from ..orm.base import Quaternion, Position, Base, RobotState, MetaData
+from ..plan_failures import ObjectUnfetchable, ReachabilityFailure
 from ..robot_descriptions import robot_description
 from ..task import with_tree
 from ..enums import Arms
 from ..designator import ActionDesignatorDescription
 from ..bullet_world import BulletWorld
+from ..pose import Pose
 import time
 
 
@@ -437,7 +439,7 @@ class PlaceAction(ActionDesignatorDescription):
         """
         Arm that is currently holding the object
         """
-        target_location: Tuple[List[float], List[float]]
+        target_location: Pose
         """
         Pose in the world at which the object should be placed
         """
@@ -460,8 +462,8 @@ class PlaceAction(ActionDesignatorDescription):
                 action.object = None
 
             if self.target_location:
-                position = Position(*self.target_location[0])
-                orientation = Quaternion(*self.target_location[1])
+                position = Position(*self.target_location.position_as_list())
+                orientation = Quaternion(*self.target_location.orientation_as_list())
                 session.add(position)
                 session.add(orientation)
                 session.commit()
@@ -476,7 +478,7 @@ class PlaceAction(ActionDesignatorDescription):
             return action
 
     def __init__(self, object_designator_description: ObjectDesignatorDescription,
-                 target_locations: List[Tuple[List[float], List[float]]],
+                 target_locations: List[Pose],
                  arms: List[str], resolver=None):
         """
         Create an Action Description to place an object
@@ -488,7 +490,7 @@ class PlaceAction(ActionDesignatorDescription):
         """
         super(PlaceAction, self).__init__(resolver)
         self.object_designator_description: ObjectDesignatorDescription = object_designator_description
-        self.target_locations: List[Tuple[List[float], List[float]]] = target_locations
+        self.target_locations: List[Pose] = target_locations
         self.arms: List[str] = arms
 
     def ground(self) -> Action:
@@ -508,7 +510,7 @@ class NavigateAction(ActionDesignatorDescription):
 
     @dataclasses.dataclass
     class Action(ActionDesignatorDescription.Action):
-        target_location: Tuple[List[float], List[float]]
+        target_location: Pose
         """
         Location to which the robot should be navigated
         """
@@ -521,9 +523,10 @@ class NavigateAction(ActionDesignatorDescription):
             return ORMNavigateAction()
 
         def insert(self, session, *args, **kwargs) -> ORMNavigateAction:
+
             # initialize position and orientation
-            position = Position(*self.target_location[0])
-            orientation = Quaternion(*self.target_location[1])
+            position = Position(*self.target_location.position_as_list())
+            orientation = Quaternion(*self.target_location.orientation_as_list())
 
             # add those to the database and get the primary keys
             session.add(position)
@@ -543,7 +546,7 @@ class NavigateAction(ActionDesignatorDescription):
 
             return action
 
-    def __init__(self, target_locations: List[Tuple[List[float], List[float]]], resolver=None):
+    def __init__(self, target_locations: List[Pose], resolver=None):
         """
         Navigates the robot to a location.
 
@@ -551,7 +554,7 @@ class NavigateAction(ActionDesignatorDescription):
         :param resolver: An alternative resolver that creates a performable designator from the list of possible parameter
         """
         super(NavigateAction, self).__init__(resolver)
-        self.target_locations: List[Tuple[List[float], List[float]]] = target_locations
+        self.target_locations: List[Pose] = target_locations
 
     def ground(self) -> Action:
         """
@@ -577,7 +580,7 @@ class TransportAction(ActionDesignatorDescription):
         """
         Arm that should be used
         """
-        target_location: Tuple[List[float], List[float]]
+        target_location: Pose
         """
         Target Location to which the object should be transported
         """
@@ -598,7 +601,7 @@ class TransportAction(ActionDesignatorDescription):
                     f"Found no pose for the robot to grasp the object: {self.object_designator} with arm: {self.arm}")
 
             NavigateAction([pickup_pose.pose]).resolve().perform()
-            PickUpAction.Action(self.object_designator, self.arm, "left").perform()
+            PickUpAction.Action(self.object_designator, self.arm, "front").perform()
             ParkArmsAction.Action(Arms.BOTH).perform()
             try:
                 place_loc = CostmapLocation(target=self.target_location, reachable_for=robot_desig.resolve()).resolve()
@@ -616,7 +619,7 @@ class TransportAction(ActionDesignatorDescription):
             raise NotImplementedError()
 
     def __init__(self, object_designator_description: ObjectDesignatorDescription, arms: List[str],
-                 target_locations: List[Tuple[List[float], List[float]]], resolver=None):
+                 target_locations: List[Pose], resolver=None):
         """
         Designator representing a pick and place plan.
 
@@ -628,7 +631,7 @@ class TransportAction(ActionDesignatorDescription):
         super(TransportAction, self).__init__(resolver)
         self.object_designator_description: ObjectDesignatorDescription = object_designator_description
         self.arms: List[str] = arms
-        self.target_locations: List[Tuple[List[float], List[float]]] = target_locations
+        self.target_locations: List[Pose] = target_locations
 
     def ground(self) -> Action:
         """
@@ -648,7 +651,7 @@ class LookAtAction(ActionDesignatorDescription):
 
     @dataclasses.dataclass
     class Action(ActionDesignatorDescription.Action):
-        target: List[float]
+        target: Pose
         """
         Position at which the robot should look, given as 6D pose
         """
@@ -663,7 +666,7 @@ class LookAtAction(ActionDesignatorDescription):
         def insert(self, session: sqlalchemy.orm.session.Session, *args, **kwargs) -> Base:
             raise NotImplementedError()
 
-    def __init__(self, targets: List[List[float]], resolver=None):
+    def __init__(self, targets: List[Pose], resolver=None):
         """
         Moves the head of the robot such that it points towards the given target location.
 
@@ -671,7 +674,7 @@ class LookAtAction(ActionDesignatorDescription):
         :param resolver: An alternative resolver that returns a performable designator for a list of possible target locations
         """
         super(LookAtAction, self).__init__(resolver)
-        self.targets: List[List[float]] = targets
+        self.targets: List[Pose] = targets
 
     def ground(self) -> Action:
         """
@@ -753,16 +756,16 @@ class OpenAction(ActionDesignatorDescription):
         def insert(self, session: sqlalchemy.orm.session.Session, *args, **kwargs) -> Base:
             raise NotImplementedError()
 
-    def __init__(self, object_designator_description: ObjectDesignatorDescription, arms: List[str], resolver=None):
+    def __init__(self, object_designator_description: ObjectPart, arms: List[str], resolver=None):
         """
         Moves the arm of the robot to open a container.
 
-        :param object_designator_description: Object designator describing the object that should be opened
+        :param object_designator_description: Object designator describing the handle that should be used to open
         :param arms: A list of possible arms that should be used
         :param resolver: A alternative resolver that returns a performable designator for the lists of possible parameter.
         """
         super(OpenAction, self).__init__(resolver)
-        self.object_designator_description: ObjectDesignatorDescription = object_designator_description
+        self.object_designator_description: ObjectPart = object_designator_description
         self.arms: List[str] = arms
 
     def ground(self) -> Action:
@@ -785,7 +788,7 @@ class CloseAction(ActionDesignatorDescription):
     @dataclasses.dataclass
     class Action(ActionDesignatorDescription.Action):
 
-        object_designator: ObjectDesignatorDescription.Object
+        object_designator: ObjectPart.Object
         """
         Object designator describing the object that should be closed
         """
@@ -804,17 +807,17 @@ class CloseAction(ActionDesignatorDescription):
         def insert(self, session: sqlalchemy.orm.session.Session, *args, **kwargs) -> Base:
             raise NotImplementedError()
 
-    def __init__(self, object_designator_description: ObjectDesignatorDescription, arms: List[str],
+    def __init__(self, object_designator_description: ObjectPart, arms: List[str],
                  resolver=None):
         """
         Attempts to close an open container
 
-        :param object_designator_description: Object designator description of the object that should be closed
+        :param object_designator_description: Object designator description of the handle that should be used
         :param arms: A list of possible arms to use
         :param resolver: An alternative resolver that returns a performable designator for the list of possible parameter
         """
         super(CloseAction, self).__init__(resolver)
-        self.object_designator_description: ObjectDesignatorDescription = object_designator_description
+        self.object_designator_description: ObjectPart = object_designator_description
         self.arms: List[str] = arms
 
     def ground(self) -> Action:
