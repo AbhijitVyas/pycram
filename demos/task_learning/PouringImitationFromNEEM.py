@@ -80,22 +80,28 @@ def pouring_plan_from_instructions(source_obj, source_obj_desig, destination_obj
         MoveTorsoAction([0.31]).resolve().perform()
 
         # perform picking up action
+        pick_up_counter = 0
         while True:
             is_successful = do_pick_up(source_obj, source_obj_desig, pouring_hand)
-            if (is_successful):
+            pick_up_counter += 1
+            if is_successful or pick_up_counter > 3:
                 break
 
         # perform pouring action
+        pour_counter = 0
         while True:
             is_successful = do_pour(source_obj_desig, destination_obj, destination_obj_desig, pouring_hand,
                                     pouring_angle, pouring_time)
-            if (is_successful):
+            pour_counter += 1
+            if is_successful or pour_counter > 3:
                 break
 
         # perform placing action
+        place_counter = 0
         while True:
             is_successful = do_place(source_obj, source_obj_desig, pouring_hand)
-            if (is_successful):
+            place_counter += 1
+            if is_successful or place_counter > 3:
                 break
 
         go_back_to_original_position()
@@ -112,22 +118,28 @@ def pouring_plan_from_neems(pouring_hand):
         MoveTorsoAction([0.31]).resolve().perform()
 
         # perform picking up action
+        pick_up_counter = 0
         while True:
             is_successful = do_pick_up(source_obj, source_obj_desig, pouring_hand)
-            if (is_successful):
+            pick_up_counter += 1
+            if is_successful or pick_up_counter > 3:
                 break
 
         # perform pouring action
+        pour_counter = 0
         while True:
             is_successful = do_pour(source_obj_desig, destination_obj, destination_obj_desig, pouring_hand,
                                     pouring_angle, pouring_time)
-            if (is_successful):
+            pour_counter += 1
+            if is_successful or pour_counter > 3:
                 break
 
         # perform placing action
+        place_counter = 0
         while True:
             is_successful = do_place(source_obj, source_obj_desig, pouring_hand)
-            if (is_successful):
+            place_counter += 1
+            if is_successful or place_counter > 3:
                 break
 
         go_back_to_original_position()
