@@ -29,7 +29,7 @@ for i in range(10):
 '''
 
 
-for i in range(100):
+for i in range(10):
 	pos = [-0.2+np.sin(i)/3,-np.cos(i)/3,0.2+(i/800)]
 	water.append(p.loadURDF("water.urdf", pos))
 

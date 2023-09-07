@@ -44,21 +44,26 @@ bowl = Object("bowl", "bowl", "bowl.stl", pose=Pose([2.4, 2.8, 0.98]))
 bowl_desig = BelieveObject(names=["bowl"])
 
 # spawn bowl
-# breakfast_cereal = Object("breakfast_cereal", "breakfast_cereal", "breakfast_cereal.stl", position=[2.5, 1.8, 0.98])
-# breakfast_cereal_desig = ObjectDesignatorDescription(names=["breakfast_cereal"])
+breakfast_cereal = Object("breakfast_cereal", "breakfast_cereal", "breakfast_cereal.stl", pose=Pose([2.5, 1.8, 0.98]))
+breakfast_cereal_desig = BelieveObject(names=["breakfast_cereal"])
+
+# spawn SM_Cup
+SM_Cup = Object("SM_Cup", "SM_Cup", "SM_Cup.stl", pose=Pose([2.5, 1.9, 0.98]))
+SM_Cup_desig = BelieveObject(names=["SM_Cup"])
+
 #
 # # spawn SM_CokeBottle
-# SM_CokeBottle = Object("SM_CokeBottle", "SM_CokeBottle", "SM_CokeBottle.stl", position=[2.5, 3, 0.95])
-# SM_CokeBottle_desig = ObjectDesignatorDescription(names=["SM_CokeBottle"])
+# SM_CokeBottle = Object("SM_CokeBottle", "SM_CokeBottle", "SM_CokeBottle.stl", pose=Pose([2.5, 3, 0.95]))
+# SM_CokeBottle_desig = BelieveObject(names=["SM_CokeBottle"])
 #
 # # spawn jeroen_cup
-# jeroen_cup = Object("jeroen_cup", "jeroen_cup", "jeroen_cup.stl", position=[2.5, 3.1, 1.0])
-# jeroen_cup_desig = ObjectDesignatorDescription(names=["jeroen_cup"])
+jeroen_cup = Object("jeroen_cup", "jeroen_cup", "jeroen_cup.stl", pose=Pose([2.5, 3.1, 1.0]))
+jeroen_cup_desig = BelieveObject(names=["jeroen_cup"])
 #
 # # spawn water in a cup
-# waterObj = Object("water", "water", "water.urdf", position=[2.5, 2.8, 0.99])
-
-# p.loadURDF("water.urdf", [2.5, 2.8, 0.99])
+# waterObj = Object("water", "water", "water.urdf", pose=Pose([2.4, 2.8, 0.98]))
+#
+# p.loadURDF("water.urdf", [2.5, 2.8, 0.98])
 # bowl.attach(waterObj)
 
 apartment = Object("apartment", "environment", "apartment.urdf")
@@ -72,7 +77,7 @@ ON_EDGE_OF_COUNTER_TOP = [2.5, 1.25, 0.95]
 
 # pouring plan from console
 def pouring_plan_from_instructions(source_obj, source_obj_desig, destination_obj, destination_obj_desig, pouring_angle,
-                                   pouring_time, pouring_hand):
+                                   pouring_time, pouring_hand, pouring_pose):
     with simulated_robot:
         print("source obj current pose ", source_obj.pose)
         print("destination obj location ", destination_obj.pose)
@@ -91,7 +96,7 @@ def pouring_plan_from_instructions(source_obj, source_obj_desig, destination_obj
         pour_counter = 0
         while True:
             is_successful = do_pour(source_obj_desig, destination_obj, destination_obj_desig, pouring_hand,
-                                    pouring_angle, pouring_time)
+                                    pouring_angle, pouring_time, pouring_pose)
             pour_counter += 1
             if is_successful or pour_counter > 3:
                 break
@@ -111,7 +116,7 @@ def pouring_plan_from_instructions(source_obj, source_obj_desig, destination_obj
 def pouring_plan_from_neems(pouring_hand):
     # get the pouring parameters from the NEEM
     (pouring_angle, pouring_time, source_obj, source_obj_desig, destination_obj,
-     destination_obj_desig) = get_data_from_neem()
+     destination_obj_desig, pouring_pose) = get_data_from_neem()
 
     with simulated_robot:
         ParkArmsAction([Arms.BOTH]).resolve().perform()
@@ -129,7 +134,7 @@ def pouring_plan_from_neems(pouring_hand):
         pour_counter = 0
         while True:
             is_successful = do_pour(source_obj_desig, destination_obj, destination_obj_desig, pouring_hand,
-                                    pouring_angle, pouring_time)
+                                    pouring_angle, pouring_time+1, pouring_pose)
             pour_counter += 1
             if is_successful or pour_counter > 3:
                 break
@@ -149,53 +154,85 @@ def get_data_from_neem():
     # get source container
     source_obj, source_obj_desig = None, None
     destination_obj, destination_obj_desig = None, None
-    source = NEEMData().get_source_container_while_grasping().get("Obj")
+    source = NEEMData().get_source_container_while_pouring().get("Obj")
     print("source container from NEEM ", source)
-    # if('jeroen_cup' in source):
-    #     source_obj = jeroen_cup
-    #     source_obj_desig = jeroen_cup_desig
-    # elif('bowl' in source):
-    #     source_obj = bowl
-    #     source_obj_desig = bowl_desig
-    # elif('SM_CokeBottle' in source):
-    #     source_obj = SM_CokeBottle
-    #     source_obj_desig = SM_CokeBottle_desig
-    # elif('breakfast_cereal' in source):
-    #     source_obj = breakfast_cereal
-    #     source_obj_desig = breakfast_cereal_desig
-    if ('milk' in source):
+    if 'BlueCylinderCup' in source:
+        source_obj = jeroen_cup
+        source_obj_desig = jeroen_cup_desig
+    elif 'BigBowl' in source:
+        source_obj = bowl
+        source_obj_desig = bowl_desig
+    elif('Cup' in source):
+        source_obj = SM_Cup
+        source_obj_desig = SM_Cup_desig
+    elif'breakfast_cereal' in source:
+        source_obj = breakfast_cereal
+        source_obj_desig = breakfast_cereal_desig
+    elif 'milk' in source:
         source_obj = milk
         source_obj_desig = milk_desig
 
     # get destination container
     destination = NEEMData().get_target_obj_for_pouring().get("Obj")
     print("destination container from NEEM: ", destination)
-    # if('jeroen_cup' in destination):
-    #     destination_obj = jeroen_cup
-    #     destination_obj_desig = jeroen_cup_desig
-    # elif('bowl' or 'Bowl' in destination):
-    #     destination_obj = bowl
-    #     destination_obj_desig = bowl_desig
-    # elif('SM_CokeBottle' in destination):
-    #     destination_obj = SM_CokeBottle
-    #     destination_obj_desig = SM_CokeBottle_desig
-    # elif('breakfast_cereal' in destination):
-    #     destination_obj = breakfast_cereal
-    #     destination_obj_desig = breakfast_cereal_desig
-    if ('milk' in destination):
+    if 'BlueCylinderCup' in destination:
+        destination_obj = jeroen_cup
+        destination_obj_desig = jeroen_cup_desig
+    elif 'BigBowl' in destination:
+        destination_obj = bowl
+        destination_obj_desig = bowl_desig
+    elif ('Cup' in source):
+        source_obj = SM_Cup
+        source_obj_desig = SM_Cup_desig
+    elif 'breakfast_cereal' in destination:
+        destination_obj = breakfast_cereal
+        destination_obj_desig = breakfast_cereal_desig
+    elif 'milk' in destination:
         destination_obj = milk
         destination_obj_desig = milk_desig
 
     # get pouring angle
     pouring_angle_obj = NEEMData().get_max_pouring_angle_for_source_obj()
-    pouring_angle = pouring_angle_obj.get('AngleValue')
+    pouring_angle = pouring_angle_obj.get('MAXAngle')
+    pouring_angle = pouring_angle.split(",")
+    pouring_angle = np.array(pouring_angle)
+    pouring_angle = np.asarray(pouring_angle, dtype=float)
+    # convert UE left-handedness to ROS right-handedness
+    # Point6DoF right = new Point6DoF(-left.X, left.Y, left.Z, -left.Yaw, left.Pitch, -left.Roll)
+    # pouring_angle = [-1 * pouring_angle[2],
+    #                  pouring_angle[1],
+    #                  -1 * pouring_angle[0]]
+
     print("pouring_angle: ", pouring_angle)
 
     # get pouring time
     pouring_time_obj = NEEMData().get_pouring_event_time_duration()
     pouring_time = (pouring_time_obj.get('End') - pouring_time_obj.get('Begin'))
     print("pouring_time:", pouring_time)
-    return pouring_angle, pouring_time, source_obj, source_obj_desig, destination_obj, destination_obj_desig
+
+    source_pose = NEEMData().get_source_container_pose_while_pouring().get('Pose')
+    source_pose = source_pose.split(",")
+    source_pose = np.array(source_pose)
+    source_pose = np.asarray(source_pose, dtype=float)
+    dest_pose = NEEMData().get_target_container_pose_while_pouring().get('Pose')
+    dest_pose = dest_pose.split(",")
+    dest_pose = np.array(dest_pose)
+    dest_pose = np.asarray(dest_pose, dtype=float)
+
+    # pouring pose is the relative difference between source and destination container poses
+    pouring_pose = [source_pose[0] - dest_pose[0],
+                    source_pose[1] - dest_pose[1],
+                    source_pose[2] - dest_pose[2]]
+    # convert UE left-handedness to ROS right-handedness
+    pouring_pose = [-1 * pouring_pose[0],
+                    pouring_pose[1],
+                    pouring_pose[2]]
+
+    print("source  poses", source_pose)
+    print("destination poses", dest_pose)
+    print("pouring poses", pouring_pose)
+
+    return pouring_angle, pouring_time, source_obj, source_obj_desig, destination_obj, destination_obj_desig, pouring_pose
 
 
 def do_place(source_obj, source_obj_desig, pouring_hand):
@@ -213,7 +250,6 @@ def do_place(source_obj, source_obj_desig, pouring_hand):
         ParkArmsAction([Arms.BOTH]).resolve().perform()
 
         place_pose = SemanticCostmapLocation.Location(pose=Pose(source_obj.original_pose.position_as_list(), [0, 0, 0, 1]))
-        print('place pose: ', place_pose)
         print('perform place action')
         try:
             PlaceAction(source_obj_desig, target_locations=[place_pose.pose], arms=[pouring_hand]).resolve().perform()
@@ -224,10 +260,11 @@ def do_place(source_obj, source_obj_desig, pouring_hand):
             return False
 
 
-def do_pour(source_obj_desig, destination_obj, destination_obj_desig, pouring_hand, pouring_angle, pouring_time):
+def do_pour(source_obj_desig, destination_obj, destination_obj_desig, pouring_hand: str, pouring_angle,
+            pouring_time: float, pouring_pose):
     with simulated_robot:
-
-        quaternion = tf.transformations.quaternion_from_euler(math.radians(pouring_angle), 0, 0, axes="sxyz")
+        # calculate quaternion from the pouring angle data
+        quaternion = tf.transformations.quaternion_from_euler(math.radians(pouring_angle[0]), math.radians(pouring_angle[1]), math.radians(pouring_angle[2]), axes="sxyz")
         # print('perform quaternion', quaternion)
         pour_pose = None
         while True:
@@ -241,12 +278,20 @@ def do_pour(source_obj_desig, destination_obj, destination_obj_desig, pouring_ha
         ParkArmsAction([Arms.BOTH]).resolve().perform()
 
         # calculate tilting pose
+        destination_obj_pose = destination_obj.original_pose.position_as_list()
+        print("dest pose", destination_obj_pose)
+        # take a note: pouring_pose is in cm, and we should convert it to meter for pybullet.
+        source_obj_pose = [destination_obj_pose[0] - pouring_pose[0]*0.01,
+                           destination_obj_pose[1] - pouring_pose[1]*0.01,
+                           destination_obj_pose[2] + pouring_pose[2]*0.01]
+
+        print("source_obj_pose", source_obj_pose)
         tilting_pose = SemanticCostmapLocation.Location(
-            pose=Pose(destination_obj.original_pose.position_as_list(), list(quaternion)))
+            pose=Pose(source_obj_pose, list(quaternion)))
 
         # print('tilting pose: ', tilting_pose)
         revert_tilting_pose = SemanticCostmapLocation.Location(
-            pose=Pose(destination_obj.original_pose.position_as_list(), [0.0, 0, 0, 1]))
+            pose=Pose(source_obj_pose, [0.0, 0, 0, 1]))
         # print('revert tilting pose: ', revert_tilting_pose)
         print('perform pouring action')
         # do pouring by tilting, and accept time interval
@@ -316,7 +361,7 @@ def go_back_to_original_position():
     with simulated_robot:
         ParkArmsAction([Arms.BOTH]).resolve().perform()
         final_pose = SemanticCostmapLocation.Location(pose=Pose([1, 2.5, 0], [0.0, 0, 0, 1.0]))
-        print('final pose: ', final_pose)
+        # print('final pose: ', final_pose)
         # end_pose = CostmapLocation(target=robot_desig.resolve(), reachable_for=robot_desig).resolve()
         NavigateAction(target_locations=[final_pose.pose]).resolve().perform()
 
@@ -365,7 +410,7 @@ def putdown_plan(location, source_obj_desig, pickup_arm):
         NavigateAction(target_locations=[place_pose.pose]).resolve().perform()
 
         place_pose = SemanticCostmapLocation.Location(pose=Pose(location, [0, 0, 0, 1]))
-        print('place pose: ', place_pose)
+        # print('place pose: ', place_pose)
         print('perform place action')
         PlaceAction(source_obj_desig, target_locations=[place_pose.pose], arms=[pickup_arm]).resolve().perform()
 
