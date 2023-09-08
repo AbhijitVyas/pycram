@@ -106,7 +106,10 @@ def pouring_plan_from_instructions(source_obj, source_obj_desig, destination_obj
         while True:
             is_successful = do_place(source_obj, source_obj_desig, pouring_hand)
             place_counter += 1
-            if is_successful or place_counter > 3:
+            if place_counter > 3:
+                putdown_plan(ON_STOVE, source_obj_desig, pouring_hand)
+
+            if is_successful:
                 break
 
         go_back_to_original_position()
@@ -144,7 +147,10 @@ def pouring_plan_from_neems(pouring_hand):
         while True:
             is_successful = do_place(source_obj, source_obj_desig, pouring_hand)
             place_counter += 1
-            if is_successful or place_counter > 3:
+            if place_counter > 3:
+                putdown_plan(ON_STOVE, source_obj_desig, pouring_hand)
+
+            if is_successful:
                 break
 
         go_back_to_original_position()
