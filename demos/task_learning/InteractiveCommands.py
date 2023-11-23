@@ -45,7 +45,7 @@ world.set_gravity([0, 0, -9.8])
 
 
 
-robot_desig = BelieveObject(names=["pr2"])
+
 
 NEAR_STOVE = [2.5, 2, 0.95]
 ON_STOVE = [2.5, 1.5, 0.95]
@@ -62,6 +62,7 @@ class BootstrapInstructions:
     def __init__(self, environment_name, robot_agent_name, activity_type):
         self.environment = None
         self.robot_agent = None
+        self.robot_desig = None
         self.load_environment(environment_name)
         self.load_robot_agent(robot_agent_name)
         self.load_assets(activity_type)
@@ -77,11 +78,12 @@ class BootstrapInstructions:
     def load_robot_agent(self, robot_agent_name):
         if robot_agent_name is "PR2":
             self.robot_agent = Object("pr2", "robot", "pr2.urdf", pose=Pose([1.2, 2.5, 0]))
+            self.robot_desig = BelieveObject(names=["pr2"])
 
     def load_assets(self, activity_type):
         if activity_type is "Pouring":
             # spawn Milkbox
-            self.milk = Object("milk", "milk", "milk.stl", pose=Pose([2.4, 2.5, 1]))
+            milk = Object("milk", "milk", "milk.stl", pose=Pose([2.4, 2.5, 1]))
             milk_desig = BelieveObject(names=["milk"])
 
             # spawn bowl
