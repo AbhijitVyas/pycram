@@ -35,30 +35,7 @@ world.set_gravity([0, 0, -9.8])
 # pr2 = Object("pr2", "robot", "pr2.urdf", position=[1.2, 2.5, 0])
 # robot_desig = ObjectDesignatorDescription(names=["pr2"]).resolve()
 
-# spawn Milkbox
-milk = Object("milk", "milk", "milk.stl", pose=Pose([2.4, 2.5, 1]))
-milk_desig = BelieveObject(names=["milk"])
 
-# spawn bowl
-bowl = Object("bowl", "bowl", "bowl.stl", pose=Pose([2.4, 2.8, 0.98]))
-bowl_desig = BelieveObject(names=["bowl"])
-
-# spawn bowl
-breakfast_cereal = Object("breakfast_cereal", "breakfast_cereal", "breakfast_cereal.stl", pose=Pose([2.5, 1.8, 0.98]))
-breakfast_cereal_desig = BelieveObject(names=["breakfast_cereal"])
-
-# spawn SM_Cup
-SM_Cup = Object("SM_Cup", "SM_Cup", "SM_Cup.stl", pose=Pose([2.5, 1.9, 0.98]))
-SM_Cup_desig = BelieveObject(names=["SM_Cup"])
-
-#
-# # spawn SM_CokeBottle
-# SM_CokeBottle = Object("SM_CokeBottle", "SM_CokeBottle", "SM_CokeBottle.stl", pose=Pose([2.5, 3, 0.95]))
-# SM_CokeBottle_desig = BelieveObject(names=["SM_CokeBottle"])
-#
-# # spawn jeroen_cup
-jeroen_cup = Object("jeroen_cup", "jeroen_cup", "jeroen_cup.stl", pose=Pose([2.5, 3.1, 1.0]))
-jeroen_cup_desig = BelieveObject(names=["jeroen_cup"])
 #
 # # spawn water in a cup
 # waterObj = Object("water", "water", "water.urdf", pose=Pose([2.4, 2.8, 0.98]))
@@ -66,14 +43,68 @@ jeroen_cup_desig = BelieveObject(names=["jeroen_cup"])
 # p.loadURDF("water.urdf", [2.5, 2.8, 0.98])
 # bowl.attach(waterObj)
 
-apartment = Object("apartment", "environment", "apartment.urdf")
-pr2 = Object("pr2", "robot", "pr2.urdf", pose=Pose([1.2, 2.5, 0]))
+
+
 robot_desig = BelieveObject(names=["pr2"])
 
 NEAR_STOVE = [2.5, 2, 0.95]
 ON_STOVE = [2.5, 1.5, 0.95]
 ON_EDGE_OF_COUNTER_TOP = [2.5, 1.25, 0.95]
 
+
+class BootstrapInstructions:
+    """
+    Low-level interface to PyCRAM, which provides the easy interaction methods in Python.
+    TODO: Hook it up with GUI where we can provide options as dropbox where user can select an environment
+    as well as robot agent (right now mainly pr2).
+    """
+
+    def __init__(self, environment_name, robot_agent_name, activity_type):
+        self.environment = None
+        self.robot_agent = None
+        self.load_environment(environment_name)
+        self.load_robot_agent(robot_agent_name)
+        self.load_assets(activity_type)
+
+    def load_environment(self, environment_name):
+        if environment_name is "Apartment":
+            # spawn an apartment
+            self.environment = Object("apartment", "environment", "apartment.urdf")
+        elif environment_name is "Kitchen":
+            # spawn a Kitchen
+            self.environment = Object("kitchen", "environment", "kitchen.urdf")
+
+    def load_robot_agent(self, robot_agent_name):
+        if robot_agent_name is "PR2":
+            self.robot_agent = Object("pr2", "robot", "pr2.urdf", pose=Pose([1.2, 2.5, 0]))
+
+    def load_assets(self, activity_type):
+        if activity_type is "Pouring":
+            # spawn Milkbox
+            self.milk = Object("milk", "milk", "milk.stl", pose=Pose([2.4, 2.5, 1]))
+            milk_desig = BelieveObject(names=["milk"])
+
+            # spawn bowl
+            bowl = Object("bowl", "bowl", "bowl.stl", pose=Pose([2.4, 2.8, 0.98]))
+            bowl_desig = BelieveObject(names=["bowl"])
+
+            # spawn bowl
+            breakfast_cereal = Object("breakfast_cereal", "breakfast_cereal", "breakfast_cereal.stl",
+                                      pose=Pose([2.5, 1.8, 0.98]))
+            breakfast_cereal_desig = BelieveObject(names=["breakfast_cereal"])
+
+            # spawn SM_Cup
+            SM_Cup = Object("SM_Cup", "SM_Cup", "SM_Cup.stl", pose=Pose([2.5, 1.9, 0.98]))
+            SM_Cup_desig = BelieveObject(names=["SM_Cup"])
+
+            #
+            # # spawn SM_CokeBottle
+            # SM_CokeBottle = Object("SM_CokeBottle", "SM_CokeBottle", "SM_CokeBottle.stl", pose=Pose([2.5, 3, 0.95]))
+            # SM_CokeBottle_desig = BelieveObject(names=["SM_CokeBottle"])
+            #
+            # # spawn jeroen_cup
+            jeroen_cup = Object("jeroen_cup", "jeroen_cup", "jeroen_cup.stl", pose=Pose([2.5, 3.1, 1.0]))
+            jeroen_cup_desig = BelieveObject(names=["jeroen_cup"])
 
 # pouring plan from console
 def pouring_plan_from_instructions(source_obj, source_obj_desig, destination_obj, destination_obj_desig, pouring_angle,
@@ -87,7 +118,7 @@ def pouring_plan_from_instructions(source_obj, source_obj_desig, destination_obj
         # perform picking up action
         pick_up_counter = 0
         while True:
-            is_successful = do_pick_up(source_obj, source_obj_desig, pouring_hand)
+            is_successful = do_pick_up(source_obj_desig, pouring_hand)
             pick_up_counter += 1
             if is_successful or pick_up_counter > 3:
                 break
@@ -128,7 +159,7 @@ def pouring_plan_from_neems(pouring_hand):
         # perform picking up action
         pick_up_counter = 0
         while True:
-            is_successful = do_pick_up(source_obj, source_obj_desig, pouring_hand)
+            is_successful = do_pick_up(source_obj_desig, pouring_hand)
             pick_up_counter += 1
             if is_successful or pick_up_counter > 3:
                 break
@@ -312,7 +343,7 @@ def do_pour(source_obj_desig, destination_obj, destination_obj_desig, pouring_ha
             return False
 
 
-def do_pick_up(source_obj, source_obj_desig, pouring_hand):
+def do_pick_up(source_obj_desig, pouring_hand):
     with simulated_robot:
 
         pickup_pose = None
@@ -372,7 +403,7 @@ def go_back_to_original_position():
         NavigateAction(target_locations=[final_pose.pose]).resolve().perform()
 
 
-def pickup_plan(source_obj, source_obj_desig, grasp_arm=None, grasp_type=None):
+def pickup_plan(source_obj_desig, grasp_arm=None, grasp_type=None):
     print("Given grasp type", grasp_type)
     print("Given grasp arm", grasp_arm)
 
