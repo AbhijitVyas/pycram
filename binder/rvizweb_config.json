@@ -1,0 +1,27 @@
+{
+  "globalOptions": {
+    "background": "#333333",
+    "fixedFrame": "/simulated/odom"
+  },
+  "sidebarOpened": true,
+  "displays": [
+    {
+      "isShown": true,
+      "name": "Grid",
+      "options": {
+        "cellSize": "1",
+        "color": "#888888",
+        "numCells": "10"
+      },
+      "type": "grid"
+    },
+    {
+      "isShown": true,
+      "name": "Marker array",
+      "options": {
+        "topic": "/pycram/viz_marker"
+      },
+      "type": "markerArray"
+    }
+  ]
+}

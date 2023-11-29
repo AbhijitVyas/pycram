@@ -1,0 +1,17 @@
+<robot name="SM_Cup_object">
+  <link name="SM_Cup_main">
+     <visual>
+         <geometry>
+             <mesh filename="/home/user/catkin_init_ws/src/pycram/resources/SM_Cup.stl" scale="1 1 1" />
+         </geometry>
+         <material name="white">
+             <color rgba="1 1 1 1" />
+         </material>
+     </visual>
+     <collision>
+     <geometry>
+         <mesh filename="/home/user/catkin_init_ws/src/pycram/resources/SM_Cup.stl" scale="1 1 1" />
+     </geometry>
+     </collision>
+     <inertial><mass value="0.1" /><origin rpy="0 0 0" xyz="0 0 0" /><inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" /></inertial></link>
+ </robot>
