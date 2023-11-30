@@ -48,7 +48,7 @@ class BulletWorldTest(unittest.TestCase):
 class XMLTester(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.urdf_string = open(os.path.join("..", "resources", "pr2.urdf"), "r").read()
+        self.urdf_string = open(os.path.join("..", "resources", "../resources/cached/pr2.urdf"), "r").read()
 
     def test_inertial(self):
         result = fix_missing_inertial(self.urdf_string)
