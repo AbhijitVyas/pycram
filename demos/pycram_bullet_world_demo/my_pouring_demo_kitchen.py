@@ -32,7 +32,7 @@ bowl = Object("bowl", "bowl", "bowl.stl", position=[1.6, 1, 0.90])
 bowl_desig = ObjectDesignatorDescription(names=["bowl"])
 
 # spawn PR2
-pr2 = Object("pr2", "robot", "pr2.urdf")
+pr2 = Object("pr2", "robot", "../../resources/cached/pr2.urdf")
 robot_desig = ObjectDesignatorDescription(names=["pr2"]).resolve()
 
 # pouring plan begins

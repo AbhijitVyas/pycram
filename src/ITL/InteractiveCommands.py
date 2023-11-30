@@ -94,7 +94,7 @@ class BootstrapInstructions:
 
     def load_robot_agent(self, robot_agent_name):
         if robot_agent_name == "PR2":
-            self.robot_agent = Object("pr2", "robot", "pr2.urdf", pose=Pose([1.2, 2.5, 0]))
+            self.robot_agent = Object("pr2", "robot", "../../resources/cached/pr2.urdf", pose=Pose([1.2, 2.5, 0]))
             self.robot_desig = BelieveObject(names=["pr2"])
 
     def load_assets(self, activity_type):
@@ -114,8 +114,8 @@ class BootstrapInstructions:
             self.breakfast_cereal_desig = BelieveObject(names=["breakfast_cereal"])
 
             # spawn SM_Cup
-            self.SM_Cup = Object("SM_Cup", "SM_Cup", "SM_Cup.stl", pose=Pose([2.5, 1.9, 0.98]))
-            self.SM_Cup_desig = BelieveObject(names=["SM_Cup"])
+            # self.SM_Cup = Object("SM_Cup", "SM_Cup", "SM_Cup.stl", pose=Pose([2.5, 1.9, 0.98]))
+            # self.SM_Cup_desig = BelieveObject(names=["SM_Cup"])
 
             #
             # # spawn SM_CokeBottle

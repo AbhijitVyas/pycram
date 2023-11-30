@@ -30,7 +30,7 @@ class PouringPlan(object):
         self.apartment_desig = ObjectDesignatorDescription(names=['apartment']).resolve()
 
         # spawn pr2
-        self.pr2 = Object("pr2", "robot", "pr2.urdf", position=[1, 2.5, 0])
+        self.pr2 = Object("pr2", "robot", "../../../resources/cached/pr2.urdf", position=[1, 2.5, 0])
         self.robot_desig = ObjectDesignatorDescription(names=["pr2"]).resolve()
         # spawn Milkbox
         self.milk = Object("milk", "milk", "milk.stl", position=[2.5, 2.5, 1])

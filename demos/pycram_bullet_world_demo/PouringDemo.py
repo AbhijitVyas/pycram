@@ -17,7 +17,7 @@ world.set_gravity([0, 0, -9.8])
 milk = Object("milk", "milk", "../../resources/milk.stl", pose=Pose([2.4, 2.5, 1]))
 # destination container
 bowl = Object("bowl", "bowl", "../../resources/bowl.stl", pose=Pose([2.4, 2.8, 0.98]))
-pr2 = Object("pr2", "robot", "../../resources/pr2.urdf", pose=Pose([1.2, 2.5, 0]))
+pr2 = Object("pr2", "robot", "../../resources/cached/pr2.urdf", pose=Pose([1.2, 2.5, 0]))
 
 pr2_desig = BelieveObject(names=["pr2"])
 milk_desig = BelieveObject(names=["milk"])

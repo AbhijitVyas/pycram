@@ -20,7 +20,7 @@ world = BulletWorld()
 apartment = Object("apartment", "environment", "apartment.urdf")
 apartment_desig = ObjectDesignatorDescription(names=['apartment']).resolve()
 
-pr2 = Object("pr2", "robot", "pr2.urdf", position=[1, 2.5, 0])
+pr2 = Object("pr2", "robot", "../../resources/cached/pr2.urdf", position=[1, 2.5, 0])
 robot_desig = ObjectDesignatorDescription(names=["pr2"]).resolve()
 
 # spawn Milkbox

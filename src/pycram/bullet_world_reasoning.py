@@ -131,7 +131,7 @@ def contact(object1: Object,
     with Use_shadow_world():
         shadow_obj1 = BulletWorld.current_bullet_world.get_shadow_object(object1)
         shadow_obj2 = BulletWorld.current_bullet_world.get_shadow_object(object2)
-        p.performCollisionDetection(BulletWorld.current_bullet_world.client_id)
+        # p.performCollisionDetection(BulletWorld.current_bullet_world.client_id)
         con_points = p.getContactPoints(shadow_obj1.id, shadow_obj2.id,
                                         physicsClientId=BulletWorld.current_bullet_world.client_id)
 

@@ -23,7 +23,7 @@ world = BulletWorld("GUI")
 pybullet.resetDebugVisualizerCamera(cameraDistance=5, cameraYaw=30, cameraPitch=-70, cameraTargetPosition=[0,0,0])
 world.set_gravity([0, 0, -9.8])
 plane = Object("floor", "environment", os.path.join(resources_path, "plane.urdf"), world=world)
-robot = Object("pr2", "robot", os.path.join(resources_path, "pr2.urdf"))
+robot = Object("pr2", "robot", os.path.join(resources_path, "../../../resources/cached/pr2.urdf"))
 kitchen = Object("kitchen", "environment", os.path.join(resources_path, "kitchen.urdf"))
 
 spoon = Object("spoon", "spoon", os.path.join(resources_path, "spoon.stl"), [1.38, 0.7, 0.75])

@@ -7,19 +7,19 @@ COPY --chown=${NB_USER}:users . pycram/
 RUN vcs import --input pycram/binder/pycram-http.rosinstall --recursive
 
 # === Following step should be replace to ===
-RUN cd pycram \
-  && git submodule update --init \
-  && git clone https://github.com/Tigul/neem_interface_python.git src/neem_interface_python \
-  && cd src/neem_interface_python \
-  && git clone https://github.com/benjaminalt/neem-interface.git src/neem-interface
+#RUN cd pycram \
+#  && git submodule update --init \
+#  && git clone https://github.com/Tigul/neem_interface_python.git src/neem_interface_python \
+#  && cd src/neem_interface_python \
+#  && git clone https://github.com/benjaminalt/neem-interface.git src/neem-interface
 # === To ===
 # RUN cd pycram
   # && git submodule update --init --recursive
 # === When all .gitmodules use https urls ===
 
 RUN pip install --requirement ${PYCRAM_WS}/src/pycram/requirements.txt --user 
-RUN pip install --requirement ${PYCRAM_WS}/src/pycram/src/neem_interface_python/requirements.txt --user \
-  && pip cache purge
+#RUN pip install --requirement ${PYCRAM_WS}/src/pycram/src/neem_interface_python/requirements.txt --user \
+#  && pip cache purge
 
 COPY --chown=${NB_USER}:users binder/me ${PYCRAM_WS}/src/me
 
